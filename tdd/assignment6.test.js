@@ -67,6 +67,19 @@ describe("testing login, register, and logoff", () => {
     await login(req, saveRes);
     expect(saveRes.statusCode).toBe(401);
   });
+  it("You can't register again with the same email.", async () => {
+    const req = httpMocks.createRequest({
+      method: "POST",
+      body: {
+        email: "jim@sample.com",
+        name: "Jim",
+        password: "Pa$$word20",
+      },
+    });
+    saveRes = httpMocks.createResponse();
+    await register(req, saveRes);
+    expect(saveRes.statusCode).toBe(400);
+  });
   it("You can register an additional user.", async () => {
     const req = httpMocks.createRequest({
       method: "POST",
