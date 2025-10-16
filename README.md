@@ -70,7 +70,7 @@ You should see a version number like `psql (PostgreSQL) 14.x`.
 
 The installer for Postgresql is [here](https://www.postgresql.org/download/windows).  You will need to assign a password for Postgres itself.  Think of one and write it down.  You will be prompted for it during the installation.  You will also need a password for `mypguser`.  This is a special Postgres ID to be used for database access. Think of one and write it down.  Of course, don't reuse existing passwords.
 
-Run the install program, accepting all default values.  Once it completes, open the Windows services panel and verify that the Postgresql service is running. Then open a `cmd` prompt (not Git Bash) and type the following, entering the Postgres password when prompted, and substituting the `mypguser` passwd for `<pg-password>`:
+Run the install program, accepting all default values. You can watch [this](https://youtu.be/GpqJzWCcQXY?si=2ebcJ6FqmGkLChJL) video from 0:00 - 6:00 to make sure the application is installed correctly. Once it completes, open the Windows services panel and verify that the Postgresql service is running. Then open a `cmd` prompt (not Git Bash) and type the following, entering the Postgres password when prompted, and substituting the `mypguser` password for `<pg-password>`:
 
 ```
 "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost
