@@ -14,7 +14,7 @@ const {
 } = require("../controllers/taskController");
 const { register, logoff, logon } = require("../controllers/userController");
 const jwtMiddleware = require("../middleware/jwtMiddleware");
-const { createUser } = require("../services/userService");
+
 const waitForRouteHandlerCompletion = require("./waitForRouteHandlerCompletion");
 
 const cookie = require("cookie");
@@ -44,16 +44,6 @@ let saveTaskId = null;
 beforeAll(async () => {
   await prisma.Task.deleteMany(); // delete all tasks
   await prisma.User.deleteMany(); // delete all users
-  user1 = await createUser({
-    name: "Bob",
-    email: "bob@sample.com",
-    password: "Pa$$word20",
-  });
-  user2 = await createUser({
-    name: "Alice",
-    email: "alice@sample.com",
-    password: "Pa$$word20",
-  });
 });
 
 afterAll(async () => {
@@ -73,6 +63,9 @@ describe("testing logon, register, and logoff", () => {
     saveRes = httpMocks.createResponse();
     await register(req, saveRes);
     expect(saveRes.statusCode).toBe(201);
+    user1 = await prisma.user.findUnique({
+      where: { email: "jim@sample.com" },
+    });
   });
   it("The user can be logged on", async () => {
     const req = httpMocks.createRequest({
@@ -129,6 +122,9 @@ describe("testing logon, register, and logoff", () => {
     saveRes = httpMocks.createResponse();
     await register(req, saveRes);
     expect(saveRes.statusCode).toBe(201);
+    user2 = await prisma.user.findUnique({
+      where: { email: "manuel@sample.com" },
+    });
   });
   it("You can logon as that new user.", async () => {
     const req = httpMocks.createRequest({
@@ -492,8 +488,8 @@ describe("function tests of user operations", () => {
     agent = request.agent(app);
   });
 
-  afterAll(() => {
-    server.close();
+  afterAll(async () => {
+    await server.close();
   });
 
   describe("register a user ", () => {
@@ -503,7 +499,7 @@ describe("function tests of user operations", () => {
         email: "jdeere@example.com",
         password: "Pa$$word20",
       };
-      saveRes = await agent.post("/user").send(newUser);
+      saveRes = await agent.post("/users").send(newUser);
       expect(saveRes.status).toBe(201);
     });
     it("47. Registration returns an object with the expected name.", () => {
@@ -514,7 +510,7 @@ describe("function tests of user operations", () => {
     });
     it("49. You can logon as the newly registered user.", async () => {
       const logonObj = { email: "jdeere@example.com", password: "Pa$$word20" };
-      saveRes = await agent.post("/user/logon").send(logonObj);
+      saveRes = await agent.post("/users/logon").send(logonObj);
       expect(saveRes.status).toBe(200);
     });
     it("50. See if you are logged in", async () => {
@@ -523,7 +519,7 @@ describe("function tests of user operations", () => {
     });
     it("51. You can logoff.", async () => {
       const token = saveRes.body.csrfToken;
-      saveRes = await agent.post("/user/logoff").set("X-CSRF-TOKEN", token);
+      saveRes = await agent.post("/users/logoff").set("X-CSRF-TOKEN", token).send();
       expect(saveRes.status).toBe(200);
     });
     it("52. Makes sure we are logged out", async () => {
