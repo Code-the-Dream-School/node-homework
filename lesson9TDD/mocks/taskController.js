@@ -1,4 +1,4 @@
-const prisma = require("../db/prisma");
+const prisma = require("../../db/prisma");
 const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
 
 exports.index = async (req, res) => {

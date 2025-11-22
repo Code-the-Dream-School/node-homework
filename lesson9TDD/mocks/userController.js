@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const cookieFlags = (req) => {
   return {
     ...(process.env.NODE_ENV === "production" && { domain: req.hostname }), // add domain into cookie for production only
-    httpOnly: true,
+    // httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   };
@@ -20,7 +20,7 @@ const setJwtCookie = (req, res, user) => {
   return payload.csrfToken; // this is needed in the body returned by logon() or register()
 };
 
-const prisma = require("../db/prisma");
+const prisma = require("../../db/prisma");
 const crypto = require("crypto")
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
