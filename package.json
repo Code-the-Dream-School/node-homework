@@ -9,7 +9,7 @@
     "tdd": "./tdd.sh",
     "start": "node app.js",
     "week3": "nodemon ./week-3-middleware/app",
-    "lesson9TDD": "npx cross-env NODE_ENV=test node ./lesson11TDD/jestConfig/run-lesson9-tdd.js",
+    "lesson9TDD": "npx cross-env NODE_ENV=test node ./lesson9TDD/jestConfig/run-lesson9-tdd.js",
     "dev": "nodemon app.js"
   },
   "author": "Code the Dream",
@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
+    "cross-env": "^10.1.0",
     "csv-parser": "^3.2.0",
     "eslint": "^9.24.0",
     "globals": "^16.0.0",

@@ -5,7 +5,6 @@ module.exports = {
     ".*validation/userSchema.*": "<rootDir>/lesson9TDD/mocks/userSchema.js",
     ".*controllers/taskController.*": "<rootDir>/lesson9TDD/mocks/taskController.js",
     ".*controllers/userController.*": "<rootDir>/lesson9TDD/mocks/userController.js",
-    ".*services/userService.*":  "<rootDir>/lesson9TDD/mocks/userService.js",
   },
   reporters: [
     "default",

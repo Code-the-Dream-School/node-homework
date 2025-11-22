@@ -1,78 +1,120 @@
-const { taskSchema, patchTaskSchema } = require("../validation/taskSchema.js");
-const { StatusCodes } = require("http-status-codes");
+const prisma = require("../db/prisma");
+const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
 
-const prisma = require("../../db/prisma")
-
-const index = async (req, res) => {
-  const allTasks = await prisma.Task.findMany({
-    // where: {
-    //   userId: req.user.id,
-    // },
-    // omit: { userId: true },
+exports.index = async (req, res) => {
+  const tasks = await prisma.task.findMany({
+    // where: { userId: req.user.id },
+    select: { title: true, isCompleted: true, id: true, userId: true },
   });
-  if (allTasks.length == 0) {
-    res.status(StatusCodes.NOT_FOUND).json({ message: "No tasks were found." });
-  } else {
-    res.json(allTasks);
+
+  if (tasks.length === 0) {
+    return res.status(404).json({ message: "No tasks found for user" });
   }
+  res.status(200).json(tasks);
 };
 
-const create = async (req, res) => {
-  const { error, value } = taskSchema.validate(req.body, { abortEarly: false });
-  if (error) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ error: error.details });
+exports.show = async (req, res) => {
+  const id = parseInt(req.params?.id);
+  if (!id) {
+    return res.status(400).json({ message: "Invalid task id." });
   }
-  value.userId = req.user.id;
 
-  const newTask = await prisma.Task.create({
-    data: value,
-    // omit: { userId: true },
-  });
-  res.status(StatusCodes.CREATED).json(newTask);
-};
-
-const update = async (req, res) => {
-  const { error, value } = patchTaskSchema.validate(req.body, {
-    abortEarly: false,
-  });
-  if (error) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ error: error.details });
-  }
-  const updated = await prisma.Task.updateMany({
-    data: value,
+  // Use global user_id (set during login/registration)
+  const task = await prisma.task.findUnique({
     where: {
-      id: parseInt(req.params.id),
+      id,
       // userId: req.user.id,
     },
-  });
-  if (!updated.count) res.status(StatusCodes.NOT_FOUND);
-  res.json({});
-};
-
-const show = async (req, res) => {
-  const task = await prisma.Task.findFirst({
-    where: {
-      // userId: req.user.id,
-      id: parseInt(req.params.id),
+    select: {
+      id: true,
+      title: true,
+      isCompleted: true,
+      userId: true, // error!
     },
-    // omit: { userId: true },
   });
+
   if (!task) {
-    return res
-      .status(StatusCodes.NOT_FOUND)
-      .json({ message: "That task was not found." });
+    return res.status(404).json({ message: "Task not found" });
   }
-  res.json(task);
-};
-const deleteTask = async (req, res) => {
-  // const deleted = await prisma.Task.deleteMany({
-  //   where: {
-  //     id: parseInt(req.params.id),
-  //     userId: req.user.id,
-  //   },
-  // });
-  // if (!deleted.count) res.status(StatusCodes.NOT_FOUND);
-  res.json({});
+
+  res.status(200).json(task);
 };
 
-module.exports = { index, create, show, update, deleteTask };
+exports.create = async (req, res) => {
+  // Use global user_id (set during login/registration)
+  const { error, value } = taskSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({
+      message: "Validation failed",
+      details: error.details,
+    });
+  }
+
+  const newTask = await prisma.task.create({
+    data: {
+      ...value,
+      userId: req.user.id,
+    },
+    select: {
+      id: true,
+      title: true,
+      isCompleted: true,
+      userId: true,  // error!
+    },
+  });
+  res.status(201).json(newTask);
+};
+
+exports.update = async (req, res, next) => {
+  const id = parseInt(req.params?.id);
+  if (!id) {
+    return res.status(400).json({ message: "Invalid task id." });
+  }
+  if (!req.body) {
+    req.body = {};
+  }
+  const { error, value } = patchTaskSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({
+      message: "Validation failed",
+      details: error.details,
+    });
+  }
+  let task;
+  try {
+    task = await prisma.task.update({
+      // where: { id, userId: req.user.id },
+      where: { id },
+      data: value,
+      select: { id: true, title: true, isCompleted: true },
+    });
+  } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ message: "The task was not found." });
+    }
+    return next(err);
+  }
+  res.status(200).json(task);
+};
+
+exports.deleteTask = async (req, res, next) => {
+  // const id = parseInt(req.params?.id);
+  // if (!id) {
+  //   return res.status(400).json({ message: "Invalid task id." });
+  // }
+  // let task;
+  // try {
+  //   task = await prisma.task.delete({
+  //     where: { id, userId: req.user.id },
+  //     select: { id: true, title: true, isCompleted: true },
+  //   });
+  // } catch (err) {
+  //   if (err.code === "P2025") {
+  //     return res.status(404).json({ message: "The task was not found." });
+  //   }
+  //   return next(err);
+  // }
+  // res.status(200).json(task);
+  res.json({});
+};
