@@ -9,7 +9,7 @@ const {
   update,
   deleteTask,
 } = require("../controllers/taskController");
-const { login, register, logoff } = require("../controllers/userController");
+const { logon, register, logoff } = require("../controllers/userController");
 
 let user1 = null;
 let user2 = null;
@@ -29,10 +29,10 @@ describe("test that database and tables exist", () => {
     expect(databaseExists).toBe(true);
   });
   it("clears the tasks table", async () => {
-    expect(await pool.query("DELETE FROM tasks;")).not.toThrow();
+    expect(async () => await pool.query("DELETE FROM tasks;")).not.toThrow();
   });
   it("clears the users table", async () => {
-    expect(await pool.query("DELETE FROM users;")).not.toThrow();
+    expect(async () => await pool.query("DELETE FROM users;")).not.toThrow();
   });
 });
 
@@ -40,7 +40,7 @@ afterAll(async () => {
   await pool.end();
 });
 
-describe("testing login, register, and logoff", () => {
+describe("testing logon, register, and logoff", () => {
   it("You can register a user.", async () => {
     const req = httpMocks.createRequest({
       method: "POST",
@@ -65,13 +65,13 @@ describe("testing login, register, and logoff", () => {
       body: { email: "jim@sample.com", password: "Pa$$word20" },
     });
     saveRes = httpMocks.createResponse();
-    await login(req, saveRes);
+    await logon(req, saveRes);
     expect(saveRes.statusCode).toBe(200);
   });
 
   it("returns the expected name.", () => {
     saveData = saveRes._getJSONData();
-    expect(saveData.user.name).toBe("Jim");
+    expect(saveData.name).toBe("Jim");
   });
 
   it("A logon attempt with a bad password returns a 401", async () => {
@@ -80,7 +80,7 @@ describe("testing login, register, and logoff", () => {
       body: { email: "jim@sample.com", password: "bad password" },
     });
     saveRes = httpMocks.createResponse();
-    await login(req, saveRes);
+    await logon(req, saveRes);
     expect(saveRes.statusCode).toBe(401);
   });
   it("You can't register again with the same email.", async () => {
@@ -122,7 +122,7 @@ describe("testing login, register, and logoff", () => {
       body: { email: "manuel@sample.com", password: "Pa$$word20" },
     });
     saveRes = httpMocks.createResponse();
-    await login(req, saveRes);
+    await logon(req, saveRes);
     expect(saveRes.statusCode).toBe(200);
   });
   it("You can now logoff.", async () => {
@@ -136,13 +136,13 @@ describe("testing login, register, and logoff", () => {
 });
 
 describe("testing task creation", () => {
-  it("Login before testing tasks", async () => {
+  it("Logon before testing tasks", async () => {
     const req = httpMocks.createRequest({
       method: "POST",
       body: { email: "jim@sample.com", password: "Pa$$word20" },
     });
     saveRes = httpMocks.createResponse();
-    await login(req, saveRes);
+    await logon(req, saveRes);
     expect(saveRes.statusCode).toBe(200);
   });
 
