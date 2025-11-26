@@ -7,6 +7,9 @@ const {
   deleteTask,
 } = require("../controllers/taskController");
 const { logon, register, logoff } = require("../controllers/userController");
+global.users = [];
+global.tasks = [];
+global.user_id = null;
 
 // a few useful globals
 let user1 = null;
@@ -14,24 +17,6 @@ let user2 = null;
 let saveRes = null;
 let saveData = null;
 let saveTaskId = null;
-
-const { storedUsers, setLoggedOnUser } = require("../util/memoryStore.js")
-
-beforeAll(async () => {
-  user1 = {
-    email: "bob@sample.com",
-    password: "Pa$$word20",
-    name: "Bob",
-  };
-  user2 = {
-    email: "alice@sample.com",
-    password: "Pa$$word20",
-    name: "Alice",
-  };
-  storedUsers.push(user1);
-  storedUsers.push(user2);
-  setLoggedOnUser(user1);
-});
 
 describe("testing logon, register, and logoff", () => {
   it("You can register a user.", async () => {
@@ -46,6 +31,7 @@ describe("testing logon, register, and logoff", () => {
     saveRes = httpMocks.createResponse();
     await register(req, saveRes);
     expect(saveRes.statusCode).toBe(201);
+    user1 = global.user_id;
   });
   it("The user can be logged on", async () => {
     const req = httpMocks.createRequest({
@@ -59,7 +45,7 @@ describe("testing logon, register, and logoff", () => {
 
   it("returns the expected name.", () => {
     saveData = saveRes._getJSONData();
-    expect(saveData.user.name).toBe("Jim");
+    expect(saveData.name).toBe("Jim");
   });
   it("A logon attempt with a bad password returns a 401", async () => {
     const req = httpMocks.createRequest({
@@ -82,6 +68,7 @@ describe("testing logon, register, and logoff", () => {
     saveRes = httpMocks.createResponse();
     await register(req, saveRes);
     expect(saveRes.statusCode).toBe(201);
+    user2 = global.user_id;
   });
   it("You can logon as that new user.", async () => {
     const req = httpMocks.createRequest({
@@ -104,7 +91,7 @@ describe("testing logon, register, and logoff", () => {
 
 describe("testing task creation", () => {
   it("If you have a valid user id, create() succeeds (res.statusCode should be 201).", async () => {
-    setLoggedOnUser(user1);
+    global.user_id = user1;
     const req = httpMocks.createRequest({
       method: "POST",
       body: { title: "first task" },
@@ -149,7 +136,7 @@ describe("getting created tasks", () => {
     const req = httpMocks.createRequest({
       method: "GET",
     });
-    setLoggedOnUser(user2)
+    global.user_id = user2;
     saveRes = httpMocks.createResponse();
     await index(req, saveRes);
     expect(saveRes.statusCode).toBe(404);
@@ -158,7 +145,7 @@ describe("getting created tasks", () => {
     const req = httpMocks.createRequest({
       method: "GET",
     });
-    setLoggedOnUser(user1)
+    global.user_id = user1;
     req.params = { id: saveTaskId };
     saveRes = httpMocks.createResponse();
     await show(req, saveRes);
@@ -171,6 +158,7 @@ describe("testing the update and delete of tasks.", () => {
     const req = httpMocks.createRequest({
       method: "PATCH",
     });
+    global.user_id = user1;
     req.params = { id: saveTaskId };
     req.body = { isCompleted: true };
     saveRes = httpMocks.createResponse();
@@ -181,14 +169,14 @@ describe("testing the update and delete of tasks.", () => {
     const req = httpMocks.createRequest({
       method: "PATCH",
     });
-    setLoggedOnUser(user2);
+    global.user_id = user2;
     req.params = { id: saveTaskId };
     req.body = { isCompleted: true };
     saveRes = httpMocks.createResponse();
     await update(req, saveRes);
     expect(saveRes.statusCode).not.toBe(200);
   });
-    it("User2 can't delete this task.", async () => {
+  it("User2 can't delete this task.", async () => {
     const req = httpMocks.createRequest({
       method: "DELETE",
     });
@@ -201,7 +189,7 @@ describe("testing the update and delete of tasks.", () => {
     const req = httpMocks.createRequest({
       method: "DELETE",
     });
-    setLoggedOnUser(user1)
+    global.user_id = user1;
     req.params = { id: saveTaskId };
     saveRes = httpMocks.createResponse();
     await deleteTask(req, saveRes);
@@ -216,119 +204,119 @@ describe("testing the update and delete of tasks.", () => {
     expect(saveRes.statusCode).toBe(404);
   });
 });
-let userSchema= null;
-let taskSchema= null;
+let userSchema = null;
+let taskSchema = null;
 let patchTaskSchema = null;
 try {
-userSchema  = require("../validation/userSchema").userSchema;
-({ taskSchema, patchTaskSchema } = require("../validation/taskSchema"));
+  userSchema = require("../validation/userSchema").userSchema;
+  ({ taskSchema, patchTaskSchema } = require("../validation/taskSchema"));
 } catch {
-    // these won't be built at the start, but we want the test to proceed
+  // these won't be built at the start, but we want the test to proceed
 }
-it("finds the user and task schemas", ()=>{
-    expect(userSchema).toBeDefined();
-    expect(taskSchema).toBeDefined();
-})
-if (userSchema) {
-describe("user object validation tests", () => {
-  it("doesn't permit a trivial password", () => {
-    const { error } = userSchema.validate(
-      { name: "Bob", email: "bob@sample.com", password: "password" },
-      { abortEarly: false },
-    );
-    expect(
-      error.details.find((detail) => detail.context.key == "password"),
-    ).toBeDefined();
-  });
-  it("The user schema requires that an email be specified.", () => {
-    const { error } = userSchema.validate(
-      { name: "Bob", password: "Pa$$word20" },
-      { abortEarly: false },
-    );
-    expect(
-      error.details.find((detail) => detail.context.key == "email"),
-    ).toBeDefined();
-  });
-  it("The user schema does not accept an invalid email.", () => {
-    const { error } = userSchema.validate(
-      { name: "Bob", email: "bob_at_sample.com", password: "Pa$$word20" },
-      { abortEarly: false },
-    );
-    expect(
-      error.details.find((detail) => detail.context.key == "email"),
-    ).toBeDefined();
-  });
-  it("The user schema requires a password.", () => {
-    const { error } = userSchema.validate(
-      { name: "Bob", email: "bob@sample.com" },
-      { abortEarly: false },
-    );
-    expect(
-      error.details.find((detail) => detail.context.key == "password"),
-    ).toBeDefined();
-  });
-  it("The user schema requires name.", () => {
-    const { error } = userSchema.validate(
-      {
-        email: "bob@sample.com",
-        password: "Pa$$word20",
-      },
-      { abortEarly: false },
-    );
-    expect(
-      error.details.find((detail) => detail.context.key == "name"),
-    ).toBeDefined();
-  });
-  it("The name must be valid (3 to 30 characters).", () => {
-    const { error } = userSchema.validate(
-      { name: "B", email: "bob@sample.com", password: "Pa$$word20" },
-      { abortEarly: false },
-    );
-    expect(
-      error.details.find((detail) => detail.context.key == "name"),
-    ).toBeDefined();
-  });
-  it("If validation is performed on a valid user object, error comes back falsy.", () => {
-    const { error } = userSchema.validate(
-      { name: "Bob", email: "bob@sample.com", password: "Pa$$word20" },
-      { abortEarly: false },
-    );
-    expect(error).toBeFalsy();
-  });
+it("finds the user and task schemas", () => {
+  expect(userSchema).toBeDefined();
+  expect(taskSchema).toBeDefined();
 });
+if (userSchema) {
+  describe("user object validation tests", () => {
+    it("doesn't permit a trivial password", () => {
+      const { error } = userSchema.validate(
+        { name: "Bob", email: "bob@sample.com", password: "password" },
+        { abortEarly: false },
+      );
+      expect(
+        error.details.find((detail) => detail.context.key == "password"),
+      ).toBeDefined();
+    });
+    it("The user schema requires that an email be specified.", () => {
+      const { error } = userSchema.validate(
+        { name: "Bob", password: "Pa$$word20" },
+        { abortEarly: false },
+      );
+      expect(
+        error.details.find((detail) => detail.context.key == "email"),
+      ).toBeDefined();
+    });
+    it("The user schema does not accept an invalid email.", () => {
+      const { error } = userSchema.validate(
+        { name: "Bob", email: "bob_at_sample.com", password: "Pa$$word20" },
+        { abortEarly: false },
+      );
+      expect(
+        error.details.find((detail) => detail.context.key == "email"),
+      ).toBeDefined();
+    });
+    it("The user schema requires a password.", () => {
+      const { error } = userSchema.validate(
+        { name: "Bob", email: "bob@sample.com" },
+        { abortEarly: false },
+      );
+      expect(
+        error.details.find((detail) => detail.context.key == "password"),
+      ).toBeDefined();
+    });
+    it("The user schema requires name.", () => {
+      const { error } = userSchema.validate(
+        {
+          email: "bob@sample.com",
+          password: "Pa$$word20",
+        },
+        { abortEarly: false },
+      );
+      expect(
+        error.details.find((detail) => detail.context.key == "name"),
+      ).toBeDefined();
+    });
+    it("The name must be valid (3 to 30 characters).", () => {
+      const { error } = userSchema.validate(
+        { name: "B", email: "bob@sample.com", password: "Pa$$word20" },
+        { abortEarly: false },
+      );
+      expect(
+        error.details.find((detail) => detail.context.key == "name"),
+      ).toBeDefined();
+    });
+    it("If validation is performed on a valid user object, error comes back falsy.", () => {
+      const { error } = userSchema.validate(
+        { name: "Bob", email: "bob@sample.com", password: "Pa$$word20" },
+        { abortEarly: false },
+      );
+      expect(error).toBeFalsy();
+    });
+  });
 }
 if (taskSchema) {
-describe("task object validation test", () => {
-  it("The task schema requires a title.", () => {
-    const { error } = taskSchema.validate({ isCompleted: true });
-    expect(
-      error.details.find((detail) => detail.context.key == "title"),
-    ).toBeDefined();
-  });
-  it("If an isCompleted value is specified, it must be valid.", () => {
-    const { error } = taskSchema.validate({
-      title: "first task",
-      isCompleted: "baloney",
+  describe("task object validation test", () => {
+    it("The task schema requires a title.", () => {
+      const { error } = taskSchema.validate({ isCompleted: true });
+      expect(
+        error.details.find((detail) => detail.context.key == "title"),
+      ).toBeDefined();
     });
-    expect(
-      error.details.find((detail) => detail.context.key == "isCompleted"),
-    ).toBeDefined();
+    it("If an isCompleted value is specified, it must be valid.", () => {
+      const { error } = taskSchema.validate({
+        title: "first task",
+        isCompleted: "baloney",
+      });
+      expect(
+        error.details.find((detail) => detail.context.key == "isCompleted"),
+      ).toBeDefined();
+    });
+    it("If an isCompleted value is not specified but the rest of the object is valid, a default of false is provided by validation", () => {
+      const { value } = taskSchema.validate({ title: "first task" });
+      expect(value.isCompleted).toBe(false);
+    });
+    it("If `isCompleted` in the provided object has the value `true`, it remains `true` after validation.", () => {});
   });
-  it("If an isCompleted value is not specified but the rest of the object is valid, a default of false is provided by validation", () => {
-    const { value } = taskSchema.validate({ title: "first task" });
-    expect(value.isCompleted).toBe(false);
-  });
-  it("If `isCompleted` in the provided object has the value `true`, it remains `true` after validation.", () => {});
-});
 
-describe("patchTask object validation test", () => {
-  it("Test that the title is not required in this case.", () => {
-    const { error } = patchTaskSchema.validate({ isCompleted: true });
-    expect(error).toBeFalsy();
+  describe("patchTask object validation test", () => {
+    it("Test that the title is not required in this case.", () => {
+      const { error } = patchTaskSchema.validate({ isCompleted: true });
+      expect(error).toBeFalsy();
+    });
+    it("Test that if no value is provided for `isCompleted`, that this remains undefined in the returned value.", () => {
+      const { value } = patchTaskSchema.validate({ title: "first task" });
+      expect(value.isCompleted).toBeUndefined();
+    });
   });
-  it("Test that if no value is provided for `isCompleted`, that this remains undefined in the returned value.", () => {
-    const { value } = patchTaskSchema.validate({ title: "first task" });
-    expect(value.isCompleted).toBeUndefined();
-  });
-});
 }

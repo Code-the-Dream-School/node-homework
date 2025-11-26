@@ -9,7 +9,7 @@ const {
   update,
   deleteTask,
 } = require("../controllers/taskController");
-const { login, register, logoff } = require("../controllers/userController");
+const { logon, register, logoff } = require("../controllers/userController");
 
 // a few useful globals
 let user1 = null;
@@ -28,7 +28,7 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe("testing login, register, and logoff", () => {
+describe("testing logon, register, and logoff", () => {
   it("You can register a user.", async () => {
     const req = httpMocks.createRequest({
       method: "POST",
@@ -54,7 +54,7 @@ describe("testing login, register, and logoff", () => {
       body: { email: "jim@sample.com", password: "Pa$$word20" },
     });
     saveRes = httpMocks.createResponse();
-    await login(req, saveRes, () => {});
+    await logon(req, saveRes, () => {});
     expect(saveRes.statusCode).toBe(200); // success!
   });
 
@@ -69,7 +69,7 @@ describe("testing login, register, and logoff", () => {
       body: { email: "jim@sample.com", password: "bad password" },
     });
     saveRes = httpMocks.createResponse();
-    await login(req, saveRes, () => {});
+    await logon(req, saveRes, () => {});
     expect(saveRes.statusCode).toBe(401);
   });
 
@@ -112,7 +112,7 @@ describe("testing login, register, and logoff", () => {
       body: { email: "manuel@sample.com", password: "Pa$$word20" },
     });
     saveRes = httpMocks.createResponse();
-    await login(req, saveRes, () => {});
+    await logon(req, saveRes, () => {});
     expect(saveRes.statusCode).toBe(200);
   });
 
