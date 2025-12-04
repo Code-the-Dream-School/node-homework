@@ -17,7 +17,6 @@ afterAll(() => {
 	logSpy.mockRestore();
 	errorSpy.mockRestore();
 	warnSpy.mockRestore();
-	app.close();
 });
 
 describe("Assignment 3b: Middleware Integration", () => {
