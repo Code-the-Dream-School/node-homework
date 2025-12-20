@@ -282,13 +282,11 @@ describe("testing bulk task operations", () => {
     global.user_id = user1.id;
     const req = httpMocks.createRequest({
       method: "POST",
-      body: {
-        tasks: [
+      body: [
           { title: "Bulk task 1", priority: "high" },
           { title: "Bulk task 2", priority: "medium" },
           { title: "Bulk task 3", priority: "low" },
-        ],
-      },
+        ],     
     });
     saveRes = httpMocks.createResponse();
     await bulkCreate(req, saveRes, () => {});
