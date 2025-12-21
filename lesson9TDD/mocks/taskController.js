@@ -1,25 +1,25 @@
 const prisma = require("../../db/prisma");
 const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
 
-const whereClause = (query) => {
-  const filters = [];
-  if (query.find) {
-    filters.push({ title: { contains: query.find, mode: "insensitive" } });
-  }
-  if (query.isCompleted) {
-    const boolToFind = query.isCompleted === "true";
-    filters.push({ isCompleted: boolToFind });
-  }
-  if (query.priority) {
-    filters.push({ priority: query.priority });
-  }
-  if (query.max_date) {
-    filters.push({ createdAt: { lte: new Date(query.max_date) } });
-  }
-  if (query.min_date) {
-    filters.push({ createdAt: { gte: new Date(query.min_date) } });
-  }
-};
+// const whereClause = (query) => {
+//   const filters = [];
+//   if (query.find) {
+//     filters.push({ title: { contains: query.find, mode: "insensitive" } });
+//   }
+//   if (query.isCompleted) {
+//     const boolToFind = query.isCompleted === "true";
+//     filters.push({ isCompleted: boolToFind });
+//   }
+//   if (query.priority) {
+//     filters.push({ priority: query.priority });
+//   }
+//   if (query.max_date) {
+//     filters.push({ createdAt: { lte: new Date(query.max_date) } });
+//   }
+//   if (query.min_date) {
+//     filters.push({ createdAt: { gte: new Date(query.min_date) } });
+//   }
+// };
 
 const getFields = (fields) => {
   const fieldList = fields.split(",");

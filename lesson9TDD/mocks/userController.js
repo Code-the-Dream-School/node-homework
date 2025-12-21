@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-const { userSchema } = require("../validation/userSchema");
-=======
 const prisma = require("../../db/prisma");
 const userSchema = require("../validation/userSchema").userSchema;
->>>>>>> main
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
 
@@ -25,12 +21,7 @@ const setJwtCookie = (req, res, user) => {
   return payload.csrfToken; // this is needed in the body returned by logon() or register()
 };
 
-<<<<<<< HEAD
-const prisma = require("../../db/prisma");
-const crypto = require("crypto")
-=======
 const crypto = require("crypto");
->>>>>>> main
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
 async function hashPassword(password) {
@@ -38,55 +29,23 @@ async function hashPassword(password) {
   const derivedKey = await scrypt(password, salt, 64);
   return `${salt}:${derivedKey.toString("hex")}`;
 }
-<<<<<<< HEAD
-exports.hashPassword = hashPassword;
-=======
->>>>>>> main
 
 async function comparePassword(inputPassword, storedHash) {
   const [salt, key] = storedHash.split(":");
   const keyBuffer = Buffer.from(key, "hex");
   const derivedKey = await scrypt(inputPassword, salt, 64);
-<<<<<<< HEAD
-  // return crypto.timingSafeEqual(keyBuffer, derivedKey);
-  return true;
-=======
   return crypto.timingSafeEqual(keyBuffer, derivedKey);
->>>>>>> main
 }
 
 exports.register = async (req, res, next) => {
   const { error, value } = userSchema.validate(req.body, { abortEarly: false });
 
-<<<<<<< HEAD
-  if (error) {
-    return res.status(400).json({
-      error: "Validation failed",
-      details: error.details,
-    });
-  }
-=======
   if (error) return next(error);
->>>>>>> main
 
   const { email, name, password } = value;
 
   // Hash the password before storing (using scrypt from lesson 4)
   const hashedPassword = await hashPassword(password);
-<<<<<<< HEAD
-  // Create new user
-  let newUser;
-  try {
-    newUser = await prisma.user.create({
-      data: { email, name, hashedPassword },
-      select: { id: true, email: true, name: true },
-    });
-  } catch (err) {
-    if (err.name === "PrismaClientKnownRequestError" && err.code == "P2002") {
-      return res
-        .status(400)
-        .json({ message: "That email is already registered." });
-=======
   // In your register method, after validation and password hashing:
   // Do the Joi validation, so that value contains the user entry you want.
   // hash the password, and put it in value.hashedPassword
@@ -143,17 +102,8 @@ exports.register = async (req, res, next) => {
       return res.status(400).json({ error: "Email already registered" });
     } else {
       return next(err); // the error handler takes care of other errors
->>>>>>> main
     }
-    return next(err);
   }
-<<<<<<< HEAD
-
-  // set the cookie and return the value
-  const csrfToken = setJwtCookie(req, res, newUser);
-  res.status(201).json({ name: newUser.name, email: newUser.email, csrfToken });
-=======
->>>>>>> main
 };
 
 exports.logon = async (req, res) => {
@@ -174,15 +124,9 @@ exports.logon = async (req, res) => {
 
   const isValidPassword = await comparePassword(password, user.hashedPassword);
 
-<<<<<<< HEAD
-  if (!isValidPassword) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-=======
   // if (!isValidPassword) {
   //   return res.status(401).json({ message: "Invalid credentials" });
   // } bug
->>>>>>> main
 
   // Store user ID globally for session management (not secure for production)
   const csrfToken = setJwtCookie(req, res, user);
@@ -199,8 +143,6 @@ exports.logoff = async (req, res) => {
   // res.clearCookie("jwt", cookieFlags(req));
   res.sendStatus(200);
 };
-<<<<<<< HEAD
-=======
 
 exports.show = async (req, res) => {
   const userId = parseInt(req.params.id);
@@ -235,4 +177,3 @@ exports.show = async (req, res) => {
 
   res.status(200).json(user);
 };
->>>>>>> main
