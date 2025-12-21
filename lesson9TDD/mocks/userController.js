@@ -1,11 +1,16 @@
+<<<<<<< HEAD
 const { userSchema } = require("../validation/userSchema");
+=======
+const prisma = require("../../db/prisma");
+const userSchema = require("../validation/userSchema").userSchema;
+>>>>>>> main
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
 
 const cookieFlags = (req) => {
   return {
     ...(process.env.NODE_ENV === "production" && { domain: req.hostname }), // add domain into cookie for production only
-    // httpOnly: true,
+    // httpOnly: true, bug
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   };
@@ -20,8 +25,12 @@ const setJwtCookie = (req, res, user) => {
   return payload.csrfToken; // this is needed in the body returned by logon() or register()
 };
 
+<<<<<<< HEAD
 const prisma = require("../../db/prisma");
 const crypto = require("crypto")
+=======
+const crypto = require("crypto");
+>>>>>>> main
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
 async function hashPassword(password) {
@@ -29,30 +38,42 @@ async function hashPassword(password) {
   const derivedKey = await scrypt(password, salt, 64);
   return `${salt}:${derivedKey.toString("hex")}`;
 }
+<<<<<<< HEAD
 exports.hashPassword = hashPassword;
+=======
+>>>>>>> main
 
 async function comparePassword(inputPassword, storedHash) {
   const [salt, key] = storedHash.split(":");
   const keyBuffer = Buffer.from(key, "hex");
   const derivedKey = await scrypt(inputPassword, salt, 64);
+<<<<<<< HEAD
   // return crypto.timingSafeEqual(keyBuffer, derivedKey);
   return true;
+=======
+  return crypto.timingSafeEqual(keyBuffer, derivedKey);
+>>>>>>> main
 }
 
 exports.register = async (req, res, next) => {
   const { error, value } = userSchema.validate(req.body, { abortEarly: false });
 
+<<<<<<< HEAD
   if (error) {
     return res.status(400).json({
       error: "Validation failed",
       details: error.details,
     });
   }
+=======
+  if (error) return next(error);
+>>>>>>> main
 
   const { email, name, password } = value;
 
   // Hash the password before storing (using scrypt from lesson 4)
   const hashedPassword = await hashPassword(password);
+<<<<<<< HEAD
   // Create new user
   let newUser;
   try {
@@ -65,13 +86,74 @@ exports.register = async (req, res, next) => {
       return res
         .status(400)
         .json({ message: "That email is already registered." });
+=======
+  // In your register method, after validation and password hashing:
+  // Do the Joi validation, so that value contains the user entry you want.
+  // hash the password, and put it in value.hashedPassword
+  // delete value.password as that doesn't get stored
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // Create user account (similar to Assignment 6, but using tx instead of prisma)
+      const newUser = await tx.user.create({
+        data: { email, name, hashedPassword },
+        select: { id: true, email: true, name: true },
+      });
+
+      // Create 3 welcome tasks using createMany
+      const welcomeTaskData = [
+        {
+          title: "Complete your profile",
+          userId: newUser.id,
+          priority: "medium",
+        },
+        { title: "Add your first task", userId: newUser.id, priority: "high" },
+        { title: "Explore the app", userId: newUser.id, priority: "low" },
+      ];
+      await tx.task.createMany({ data: welcomeTaskData });
+
+      // Fetch the created tasks to return them
+      const welcomeTasks = await tx.task.findMany({
+        where: {
+          userId: newUser.id,
+          title: { in: welcomeTaskData.map((t) => t.title) },
+        },
+        select: {
+          id: true,
+          title: true,
+          isCompleted: true,
+          priority: true,
+        },
+      });
+
+      return { user: newUser, welcomeTasks };
+    });
+    const csrfToken = setJwtCookie(req, res, result.user);
+    delete result.user.id;
+    // Send response with status 201
+    res.status(201).json({
+      user: result.user,
+      welcomeTasks: result.welcomeTasks,
+      transactionStatus: "success",
+      csrfToken,
+    });
+    return;
+  } catch (err) {
+    if (err.code === "P2002") {
+      // send the appropriate error back -- the email was already registered
+      return res.status(400).json({ error: "Email already registered" });
+    } else {
+      return next(err); // the error handler takes care of other errors
+>>>>>>> main
     }
     return next(err);
   }
+<<<<<<< HEAD
 
   // set the cookie and return the value
   const csrfToken = setJwtCookie(req, res, newUser);
   res.status(201).json({ name: newUser.name, email: newUser.email, csrfToken });
+=======
+>>>>>>> main
 };
 
 exports.logon = async (req, res) => {
@@ -92,9 +174,15 @@ exports.logon = async (req, res) => {
 
   const isValidPassword = await comparePassword(password, user.hashedPassword);
 
+<<<<<<< HEAD
   if (!isValidPassword) {
     return res.status(401).json({ message: "Invalid credentials" });
   }
+=======
+  // if (!isValidPassword) {
+  //   return res.status(401).json({ message: "Invalid credentials" });
+  // } bug
+>>>>>>> main
 
   // Store user ID globally for session management (not secure for production)
   const csrfToken = setJwtCookie(req, res, user);
@@ -111,3 +199,40 @@ exports.logoff = async (req, res) => {
   // res.clearCookie("jwt", cookieFlags(req));
   res.sendStatus(200);
 };
+<<<<<<< HEAD
+=======
+
+exports.show = async (req, res) => {
+  const userId = parseInt(req.params.id);
+
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: "Invalid user ID" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+      Task: {
+        where: { isCompleted: false },
+        select: {
+          id: true,
+          title: true,
+          priority: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      },
+    },
+  });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.status(200).json(user);
+};
+>>>>>>> main
