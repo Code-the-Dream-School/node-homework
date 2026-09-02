@@ -269,9 +269,43 @@ On Mac and Linux, the setup commands above start the service now, but they may n
 
 That is okay. You do not need PostgreSQL running all the time. You only need it when you are working on assignments that use the database.
 
-If a database assignment suddenly cannot connect, check that the PostgreSQL service is running.
+If a database assignment suddenly cannot connect, check the service before changing your code.
 
-On Windows, the installer usually configures PostgreSQL to start automatically. You can change that later in the Windows Services panel if you do not want it running all the time.
+On Mac:
+
+```bash
+brew services list | grep postgresql
+```
+
+The service should say `started`. If it is stopped, start the PostgreSQL service shown in the output. For example:
+
+```bash
+brew services start postgresql@14
+```
+
+Replace `postgresql@14` with the service name installed on your computer.
+
+On Linux:
+
+```bash
+sudo service postgresql status
+```
+
+The status should say `active (running)`. If it is stopped, run:
+
+```bash
+sudo service postgresql start
+```
+
+On Mac or Linux, you can also check whether PostgreSQL is accepting connections:
+
+```bash
+pg_isready
+```
+
+A working local service reports `accepting connections`.
+
+On Windows, the installer usually configures PostgreSQL to start automatically. Open the Windows Services panel, find the PostgreSQL service, and check that its status is `Running`. If it is stopped, right-click it and select **Start**. You can change its startup behavior there if you do not want it running all the time.
 
 ## Additional Steps for Windows
 
@@ -460,6 +494,12 @@ TEST_DATABASE_URL=postgresql://<username>@localhost/testtasklist?host=/var/run/p
 ```
 
 </details>
+
+These three variables intentionally point to different databases:
+
+- `DB_URL` is for the SQL practice database used by `load-db.js`, `sqlcommand`, and Assignment 5a.
+- `DATABASE_URL` is for the task app development database used by the application.
+- `TEST_DATABASE_URL` is for a separate task app test database. Automated tests may delete its data.
 
 ## Validating Your Setup
 
