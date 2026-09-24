@@ -102,7 +102,9 @@ PostgreSQL setup is different depending on your operating system. Choose the sec
 <details>
 <summary style="font-size: 1.3em;">PostgreSQL on Mac</summary>
 
-On Mac, you can install PostgreSQL 14 with Homebrew.
+On Mac, you can install PostgreSQL 17 with Homebrew.
+
+Do not install `postgresql@14`. PostgreSQL 14 reaches end of life in November 2026, and Homebrew is removing that version. If you already have PostgreSQL 14 installed from an earlier course, see the note at the end of this section.
 
 The `<username>` you use below is your Mac username. It is the value returned by the `whoami` command.
 
@@ -116,8 +118,8 @@ Then enter these commands in a terminal session:
 
 ```bash
 brew update
-brew install postgresql@14
-brew services start postgresql@14
+brew install postgresql@17
+brew services start postgresql@17
 psql -U postgres
 CREATE ROLE <username> LOGIN CREATEDB;
 CREATE DATABASE nodehomework OWNER <username>;
@@ -146,8 +148,8 @@ Use this version if PostgreSQL is using your Mac username:
 
 ```bash
 brew update
-brew install postgresql@14
-brew services start postgresql@14
+brew install postgresql@17
+brew services start postgresql@17
 psql
 CREATE DATABASE nodehomework OWNER <username>;
 CREATE DATABASE tasklist OWNER <username>;
@@ -161,7 +163,19 @@ Verify the installation:
 psql --version
 ```
 
-You should see a version number like `psql (PostgreSQL) 14.x`.
+You should see a version number like `psql (PostgreSQL) 17.x`.
+
+**If you already have an older PostgreSQL installed:** Run `brew services list | grep postgresql` to see which version is installed. If it shows `postgresql@14`, that version is no longer supported. The simplest fix for this course is to stop it, install 17, and start 17:
+
+```bash
+brew services stop postgresql@14
+brew install postgresql@17
+brew services start postgresql@17
+```
+
+Then create the databases as shown above. Your old PostgreSQL 14 data is not copied over, which is fine for this course because you are creating fresh databases. If you have data in PostgreSQL 14 that you want to keep for some other project, ask a mentor before removing the old version.
+
+Also note that starting with PostgreSQL 15, ordinary users cannot create tables in a database they do not own. This is why every `CREATE DATABASE` command above includes `OWNER <username>`. If you later see `permission denied for schema public`, the most likely cause is that a database was created without the `OWNER` clause.
 
 </details>
 
@@ -280,10 +294,10 @@ brew services list | grep postgresql
 The service should say `started`. If it is stopped, start the PostgreSQL service shown in the output. For example:
 
 ```bash
-brew services start postgresql@14
+brew services start postgresql@17
 ```
 
-Replace `postgresql@14` with the service name installed on your computer.
+Replace `postgresql@17` with the service name installed on your computer.
 
 On Linux:
 
