@@ -102,7 +102,9 @@ PostgreSQL setup is different depending on your operating system. Choose the sec
 <details>
 <summary style="font-size: 1.3em;">PostgreSQL on Mac</summary>
 
-On Mac, you can install PostgreSQL 14 with Homebrew.
+On Mac, you can install PostgreSQL 17 with Homebrew.
+
+Do not install `postgresql@14`. PostgreSQL 14 reaches end of life in November 2026, and Homebrew is removing that version. If you already have PostgreSQL 14 installed from an earlier course, see the note at the end of this section.
 
 The `<username>` you use below is your Mac username. It is the value returned by the `whoami` command.
 
@@ -116,8 +118,8 @@ Then enter these commands in a terminal session:
 
 ```bash
 brew update
-brew install postgresql@14
-brew services start postgresql@14
+brew install postgresql@17
+brew services start postgresql@17
 psql -U postgres
 CREATE ROLE <username> LOGIN CREATEDB;
 CREATE DATABASE nodehomework OWNER <username>;
@@ -146,8 +148,8 @@ Use this version if PostgreSQL is using your Mac username:
 
 ```bash
 brew update
-brew install postgresql@14
-brew services start postgresql@14
+brew install postgresql@17
+brew services start postgresql@17
 psql
 CREATE DATABASE nodehomework OWNER <username>;
 CREATE DATABASE tasklist OWNER <username>;
@@ -161,7 +163,19 @@ Verify the installation:
 psql --version
 ```
 
-You should see a version number like `psql (PostgreSQL) 14.x`.
+You should see a version number like `psql (PostgreSQL) 17.x`.
+
+**If you already have an older PostgreSQL installed:** Run `brew services list | grep postgresql` to see which version is installed. If it shows `postgresql@14`, that version is no longer supported. The simplest fix for this course is to stop it, install 17, and start 17:
+
+```bash
+brew services stop postgresql@14
+brew install postgresql@17
+brew services start postgresql@17
+```
+
+Then create the databases as shown above. Your old PostgreSQL 14 data is not copied over, which is fine for this course because you are creating fresh databases. If you have data in PostgreSQL 14 that you want to keep for some other project, ask a mentor before removing the old version.
+
+Also note that starting with PostgreSQL 15, ordinary users cannot create tables in a database they do not own. This is why every `CREATE DATABASE` command above includes `OWNER <username>`. If you later see `permission denied for schema public`, the most likely cause is that a database was created without the `OWNER` clause.
 
 </details>
 
@@ -269,9 +283,43 @@ On Mac and Linux, the setup commands above start the service now, but they may n
 
 That is okay. You do not need PostgreSQL running all the time. You only need it when you are working on assignments that use the database.
 
-If a database assignment suddenly cannot connect, check that the PostgreSQL service is running.
+If a database assignment suddenly cannot connect, check the service before changing your code.
 
-On Windows, the installer usually configures PostgreSQL to start automatically. You can change that later in the Windows Services panel if you do not want it running all the time.
+On Mac:
+
+```bash
+brew services list | grep postgresql
+```
+
+The service should say `started`. If it is stopped, start the PostgreSQL service shown in the output. For example:
+
+```bash
+brew services start postgresql@17
+```
+
+Replace `postgresql@17` with the service name installed on your computer.
+
+On Linux:
+
+```bash
+sudo service postgresql status
+```
+
+The status should say `active (running)`. If it is stopped, run:
+
+```bash
+sudo service postgresql start
+```
+
+On Mac or Linux, you can also check whether PostgreSQL is accepting connections:
+
+```bash
+pg_isready
+```
+
+A working local service reports `accepting connections`.
+
+On Windows, the installer usually configures PostgreSQL to start automatically. Open the Windows Services panel, find the PostgreSQL service, and check that its status is `Running`. If it is stopped, right-click it and select **Start**. You can change its startup behavior there if you do not want it running all the time.
 
 ## Additional Steps for Windows
 
@@ -460,6 +508,12 @@ TEST_DATABASE_URL=postgresql://<username>@localhost/testtasklist?host=/var/run/p
 ```
 
 </details>
+
+These three variables intentionally point to different databases:
+
+- `DB_URL` is for the SQL practice database used by `load-db.js`, `sqlcommand`, and Assignment 5a.
+- `DATABASE_URL` is for the task app development database used by the application.
+- `TEST_DATABASE_URL` is for a separate task app test database. Automated tests may delete its data.
 
 ## Validating Your Setup
 
