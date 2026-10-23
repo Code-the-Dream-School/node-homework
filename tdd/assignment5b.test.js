@@ -29,10 +29,10 @@ describe("test that database and tables exist", () => {
     expect(databaseExists).toBe(true);
   });
   it("clears the tasks table", async () => {
-    expect(async () => await pool.query("DELETE FROM tasks;")).not.toThrow();
+    await pool.query("DELETE FROM tasks;");
   });
   it("clears the users table", async () => {
-    expect(async () => await pool.query("DELETE FROM users;")).not.toThrow();
+    await pool.query("DELETE FROM users;");
   });
 });
 
@@ -162,7 +162,7 @@ describe("testing task creation", () => {
     expect(saveData.title).toBe("first task");
   });
   it("The object has the right value for isCompleted.", () => {
-    expect(saveData.is_completed).toBe(false);
+    expect(saveData.isCompleted).toBe(false);
   });
 });
 
