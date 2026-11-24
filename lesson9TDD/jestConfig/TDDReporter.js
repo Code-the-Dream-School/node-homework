@@ -43,6 +43,7 @@ class Reporter {
     };
     this.optional = {
       "33.": { expected: "passed", observed: "not implemented" },
+      "34.": { expected: "passed", observed: "not implemented" },
       "35.": { expected: "passed", observed: "not implemented" },
       "36.": { expected: "failed", observed: "not implemented" },
       "37.": { expected: "passed", observed: "not implemented" },
